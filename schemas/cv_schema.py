@@ -1,14 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
+
 
 class Experience(BaseModel):
     position: str
     company: Optional[str] = None
     description: str
 
+
 class Education(BaseModel):
     degree: str
     institution: str
+
 
 class CVProfile(BaseModel):
 
@@ -16,13 +19,20 @@ class CVProfile(BaseModel):
 
     profession: Optional[str] = None
 
-    skills: list[str] = []
+    skills: list[str] = Field(default_factory=list)
 
-    experience: list[Experience] = []
+    experience: list[Experience] = Field(
+        default_factory=list
+    )
 
-    education: list[Education] = []
+    education: list[Education] = Field(
+        default_factory=list
+    )
 
-    target_positions: list[str] = []
+    target_positions: list[str] = Field(
+        default_factory=list
+    )
+
 """
 EJEMPLO DE USO DE LA CLASE CVProfile
 profile = CVProfile(

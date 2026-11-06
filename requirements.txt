@@ -1,6 +1,7 @@
-pip install streamlit
-pip install pymupdf
-pip install python-docx
-pip install pytest
-pip install python-dotenv
-pip install google-genai
+streamlit
+pymupdf
+python-docx
+pytest
+python-dotenv
+google-genai
+pydantic
