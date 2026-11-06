@@ -12,14 +12,18 @@ def main():
     print(f"Ofertas extraídas correctamente: {len(offers)}")
     print(f"Ofertas con errores: {len(errors)}")
 
+        
     for offer in offers:
-
         print("\n" + "-" * 60)
-        print("Título:", offer["title"])
-        print("Empresa:", offer["company"])
-        print("Ubicación:", offer["location"])
-        print("URL:", offer["url"])
-        print("Longitud de descripción:", len(offer["description"]))
+
+        print("Título:", offer.title)
+        print("Empresa:", offer.company)
+        print("Ubicación:", offer.location)
+        print("URL:", offer.url)
+        print("Fuente:", offer.source)
+        print("Fecha de extracción:", offer.scraped_at)
+        print("Longitud de descripción:", len(offer.description))
+
 
     if errors:
 

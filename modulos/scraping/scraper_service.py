@@ -1,6 +1,9 @@
 
 from urllib.parse import urljoin
 
+from schemas.job_schema import JobOffer
+
+
 from modulos.scraping.browser import browser_session
 from modulos.scraping.offer_details import extract_offer_details
 
@@ -60,7 +63,10 @@ def scrape_detailed_offers(headless=False):
                 details["url"] = offer_url
                 details["source"] = "Computrabajo"
 
-                results.append(details)
+                # Validar y convertir los datos al modelo JobOffer
+                offer = JobOffer(**details)
+
+                results.append(offer)
 
                 print("  Extracción completada.")
 
