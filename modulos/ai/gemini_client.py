@@ -63,7 +63,7 @@ def generate_response(
         except ServerError as error:
 
             # Solo reintentar errores 503
-            if getattr(error, "status_code", None) != 503:
+            if getattr(error, "code", None) != 503:
                 raise
 
             # Si ya agotamos los intentos, propagar el error

@@ -67,6 +67,7 @@ Identifica:
 - Formación académica.
 - Puestos laborales relacionados con su perfil.
 - Términos de búsqueda de empleo (search_queries).
+- No incluyas el país ni la ciudad en los términos (el portal ya filtra por ubicación).
 
 No agregues información que no esté respaldada
 por el currículum.

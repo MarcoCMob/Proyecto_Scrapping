@@ -233,3 +233,51 @@ class JobOfferRepository:
             JobOfferModel.scraped_at.desc()
         )
         return list(self.session.scalars(statement).all())
+    def save_many_all(
+        self,
+        offers: List[JobOffer]
+    ) -> tuple[List[JobOfferModel], int]:
+        """
+        Guarda las ofertas nuevas y devuelve TODAS las del lote
+        (nuevas y ya existentes), sin repetidos, junto con la
+        cantidad de ofertas nuevas.
+        """
+        if not offers:
+            return [], 0
+
+        resolved: List[JobOfferModel] = []
+        new_models: List[JobOfferModel] = []
+
+        try:
+            for offer in offers:
+
+                # Repetida dentro del propio lote.
+                if any(compare_offers(offer, m) for m in resolved):
+                    continue
+
+                # Ya existe en PostgreSQL.
+                existing = self.find_duplicate(offer)
+
+                if existing is not None:
+                    if all(existing is not m for m in resolved):
+                        resolved.append(existing)
+                    continue
+
+                db_offer = JobOfferModel(**offer.model_dump())
+                self.session.add(db_offer)
+
+                resolved.append(db_offer)
+                new_models.append(db_offer)
+
+            self.session.commit()
+
+            # commit() expira los objetos; se recargan para poder
+            # usarlos después de cerrar la sesión.
+            for model in resolved:
+                self.session.refresh(model)
+
+            return resolved, len(new_models)
+
+        except Exception:
+            self.session.rollback()
+            raise

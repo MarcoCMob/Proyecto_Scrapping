@@ -136,3 +136,43 @@ def test_save_many_avoids_duplicates_without_company():
         finally:
             for offer in saved_offers:
                 repository.delete_by_id(offer.id)
+def test_save_many_all_returns_new_and_existing():
+    offer_a = JobOffer(
+        title="Prueba save_many_all A",
+        company="Empresa prueba save all",
+        location="Lima, Perú",
+        description="Descripción de prueba A para save_many_all.",
+        url="https://example.com/save-all-a",
+        source="Test"
+    )
+
+    offer_b = JobOffer(
+        title="Prueba save_many_all B",
+        company="Empresa prueba save all",
+        location="Lima, Perú",
+        description="Descripción totalmente distinta para la oferta B.",
+        url="https://example.com/save-all-b",
+        source="Test"
+    )
+
+    created_ids = set()
+
+    with SessionLocal() as session:
+        repository = JobOfferRepository(session)
+
+        try:
+            first, new_first = repository.save_many_all([offer_a])
+            created_ids.update(m.id for m in first)
+
+            second, new_second = repository.save_many_all(
+                [offer_a, offer_b, offer_a]
+            )
+            created_ids.update(m.id for m in second)
+
+            assert new_first == 1
+            assert new_second == 1      # solo B es nueva
+            assert len(second) == 2     # A (existente) + B (nueva)
+
+        finally:
+            for offer_id in created_ids:
+                repository.delete_by_id(offer_id)
