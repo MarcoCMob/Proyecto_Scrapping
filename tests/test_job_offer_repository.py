@@ -47,3 +47,92 @@ def test_save_and_retrieve_offer():
         assert deleted is True
 
         print("Registro de prueba eliminado.")
+
+def test_save_many_avoids_duplicates():
+    description_a = (
+        "Empresa solicita desarrollador backend junior. "
+        "Requisitos: Java, Spring Boot, SQL y conocimientos de REST API. "
+        "Se ofrece sueldo de S/ 4000 y modalidad híbrida."
+    )
+
+    description_b = description_a.replace(
+        "S/ 4000", "S/ 4100"
+    )
+
+    offer_a = JobOffer(
+        title="Prueba deduplicacion repositorio",
+        company="Empresa de prueba deduplicacion",
+        location="Lima, Perú",
+        summary=["Tiempo completo"],
+        description=description_a,
+        url="https://example.com/offer-duplicate-a",
+        source="Test"
+    )
+
+    offer_b = JobOffer(
+        title="Prueba deduplicacion repositorio",
+        company="Empresa de prueba deduplicacion",
+        location="Lima, Perú",
+        summary=["Tiempo completo"],
+        description=description_b,
+        url="https://example.com/offer-duplicate-b",
+        source="Test"
+    )
+
+    with SessionLocal() as session:
+        repository = JobOfferRepository(session)
+
+        saved_offers = repository.save_many([offer_a, offer_b])
+
+        try:
+            print("\nPRUEBA DE DEDUPLICACIÓN")
+            print(f"Ofertas recibidas: 2")
+            print(f"Ofertas guardadas: {len(saved_offers)}")
+
+            assert len(saved_offers) == 1
+
+            print("Duplicado descartado correctamente.")
+
+        finally:
+            for offer in saved_offers:
+                repository.delete_by_id(offer.id)
+
+def test_save_many_avoids_duplicates_without_company():
+
+    offer_a = JobOffer(
+        title="Coordinador de recursos humanos",
+        company=None,
+        location="Santiago De Surco, Lima",
+        summary=["Tiempo completo"],
+        description="Oferta de prueba sin empresa identificada.",
+        url="https://example.com/oferta/recursos-humanos#publicacion-1",
+        source="Test"
+    )
+
+    offer_b = JobOffer(
+        title="Coordinador de recursos humanos",
+        company=None,
+        location="Santiago De Surco, Lima",
+        summary=["Tiempo completo"],
+        description="Oferta de prueba sin empresa identificada.",
+        url="https://example.com/oferta/recursos-humanos#publicacion-2",
+        source="Test"
+    )
+
+    with SessionLocal() as session:
+        repository = JobOfferRepository(session)
+
+        saved_offers = repository.save_many([offer_a, offer_b])
+
+        try:
+            print("\nPRUEBA DE DEDUPLICACIÓN SIN EMPRESA")
+            print(f"Ofertas recibidas: 2")
+            print(f"Ofertas guardadas: {len(saved_offers)}")
+
+            assert len(saved_offers) == 1
+
+            print("Duplicado descartado correctamente.")
+
+        finally:
+            for offer in saved_offers:
+                repository.delete_by_id(offer.id)

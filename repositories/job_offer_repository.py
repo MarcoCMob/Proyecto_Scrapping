@@ -6,22 +6,72 @@ from sqlalchemy.orm import Session
 
 from models.job_offer_model import JobOfferModel
 from schemas.job_schema import JobOffer
-
+from services.offer_deduplication_service import compare_offers
+from services.offer_deduplication_service import (
+    compare_offers,
+    normalize_url
+)
 
 class JobOfferRepository:
-    """
-    Gestiona las operaciones de persistencia de ofertas laborales.
-    """
 
     def __init__(self, session: Session):
         self.session = session
 
+    def find_duplicate(self, offer: JobOffer) -> Optional[JobOfferModel]:
+
+        # 1. Buscar primero por URL.
+        if offer.url:
+            candidates = self.session.scalars(
+                select(JobOfferModel).where(
+                    JobOfferModel.source == offer.source,
+                    JobOfferModel.url.isnot(None)
+                )
+            ).all()
+
+            normalized_new_url = normalize_url(offer.url)
+
+            for candidate in candidates:
+                if normalize_url(candidate.url) == normalized_new_url:
+                    return candidate
+
+        # 2. Si faltan datos de identidad, no podemos
+        # realizar una comparación de contenido confiable.
+        if not offer.title or not offer.company or not offer.location:
+            return None
+
+        # 3. Buscar candidatos por título, empresa y ubicación.
+        statement = select(JobOfferModel).where(
+            func.lower(func.trim(JobOfferModel.title))
+            == offer.title.strip().lower(),
+
+            func.lower(func.trim(JobOfferModel.company))
+            == offer.company.strip().lower(),
+
+            func.lower(func.trim(JobOfferModel.location))
+            == offer.location.strip().lower()
+        )
+
+        candidates = self.session.scalars(statement).all()
+
+        for candidate in candidates:
+            if compare_offers(offer, candidate):
+                return candidate
+
+        return None
+
     def save(self, offer: JobOffer) -> JobOfferModel:
-        """Guarda una oferta laboral en PostgreSQL."""
+        """
+        Guarda una oferta individual.
+        Si ya existe, devuelve el registro existente.
+        """
+
+        duplicate = self.find_duplicate(offer)
+
+        if duplicate:
+            return duplicate
 
         try:
             offer_data = offer.model_dump()
-
             db_offer = JobOfferModel(**offer_data)
 
             self.session.add(db_offer)
@@ -34,36 +84,56 @@ class JobOfferRepository:
             self.session.rollback()
             raise
 
-    def save_many(
-        self,
-        offers: List[JobOffer]
-    ) -> List[JobOfferModel]:
-        """Guarda varias ofertas en una sola transacción."""
+    def save_many(self, offers: List[JobOffer]) -> List[JobOfferModel]:
+        """
+        Guarda múltiples ofertas evitando duplicados.
+
+        Comprueba tanto los registros existentes en PostgreSQL
+        como las ofertas repetidas dentro del mismo lote.
+        """
 
         if not offers:
             return []
 
-        try:
-            db_offers = [
-                JobOfferModel(**offer.model_dump())
-                for offer in offers
-            ]
+        saved_offers = []
+        pending_offers = []
 
-            self.session.add_all(db_offers)
+        try:
+            for offer in offers:
+
+                # 1. Comprobar duplicados dentro del mismo lote.
+                duplicate_in_batch = any(
+                    compare_offers(offer, pending)
+                    for pending in pending_offers
+                )
+
+                if duplicate_in_batch:
+                    continue
+
+                # 2. Comprobar duplicados en PostgreSQL.
+                duplicate_in_database = self.find_duplicate(offer)
+
+                if duplicate_in_database:
+                    continue
+
+                # 3. Preparar el nuevo registro.
+                db_offer = JobOfferModel(**offer.model_dump())
+
+                self.session.add(db_offer)
+
+                pending_offers.append(db_offer)
+                saved_offers.append(db_offer)
+
+            # Guardar todos los registros nuevos en una transacción.
             self.session.commit()
 
-            for offer in db_offers:
-                self.session.refresh(offer)
-
-            return db_offers
+            return saved_offers
 
         except Exception:
             self.session.rollback()
             raise
 
     def get_by_id(self, offer_id: int) -> Optional[JobOfferModel]:
-        """Busca una oferta por su identificador."""
-
         return self.session.get(JobOfferModel, offer_id)
 
     def get_all(
@@ -71,7 +141,6 @@ class JobOfferRepository:
         limit: int = 100,
         offset: int = 0
     ) -> List[JobOfferModel]:
-        """Obtiene ofertas con paginación."""
 
         statement = (
             select(JobOfferModel)
@@ -83,15 +152,10 @@ class JobOfferRepository:
         return list(self.session.scalars(statement).all())
 
     def count(self) -> int:
-        """Devuelve la cantidad total de ofertas almacenadas."""
-
         statement = select(func.count()).select_from(JobOfferModel)
-
         return self.session.scalar(statement)
 
     def delete_by_id(self, offer_id: int) -> bool:
-        """Elimina una oferta por su identificador."""
-
         offer = self.get_by_id(offer_id)
 
         if offer is None:

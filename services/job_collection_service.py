@@ -5,27 +5,24 @@ from repositories.job_offer_repository import JobOfferRepository
 
 
 def collect_and_save_offers(headless=False):
-    """
-    Ejecuta el scraping de Computrabajo y almacena
-    las ofertas extraídas en PostgreSQL.
-    """
-
-    # 1. Ejecutar el scraper
+    # 1. Extraer ofertas desde Computrabajo.
     offers, errors = scrape_detailed_offers(headless=headless)
 
+    extracted_count = len(offers)
+
     print("\nRESULTADO DEL SCRAPING")
-    print(f"Ofertas extraídas: {len(offers)}")
+    print(f"Ofertas extraídas correctamente: {extracted_count}")
     print(f"Errores de extracción: {len(errors)}")
 
-    # 2. Si no hay ofertas, no abrir una sesión innecesariamente
     if not offers:
         return {
             "extracted": 0,
             "saved": 0,
+            "duplicates": 0,
             "errors": errors
         }
 
-    # 3. Guardar las ofertas en PostgreSQL
+    # 2. Guardar las ofertas evitando duplicados.
     session = SessionLocal()
 
     try:
@@ -33,12 +30,17 @@ def collect_and_save_offers(headless=False):
 
         saved_offers = repository.save_many(offers)
 
+        saved_count = len(saved_offers)
+        duplicate_count = extracted_count - saved_count
+
         print("\nRESULTADO DE PERSISTENCIA")
-        print(f"Ofertas guardadas: {len(saved_offers)}")
+        print(f"Ofertas nuevas guardadas: {saved_count}")
+        print(f"Ofertas descartadas por duplicidad: {duplicate_count}")
 
         return {
-            "extracted": len(offers),
-            "saved": len(saved_offers),
+            "extracted": extracted_count,
+            "saved": saved_count,
+            "duplicates": duplicate_count,
             "errors": errors
         }
 
