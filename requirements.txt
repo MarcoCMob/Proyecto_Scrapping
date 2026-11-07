@@ -6,4 +6,6 @@ python-dotenv
 google-genai
 pydantic
 playwright
-pip install sqlalchemy "psycopg[binary]"
+sqlalchemy
+psycopg[binary]
+sentence-transformers

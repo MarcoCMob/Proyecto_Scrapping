@@ -136,14 +136,46 @@ class JobOfferRepository:
     def get_by_id(self, offer_id: int) -> Optional[JobOfferModel]:
         return self.session.get(JobOfferModel, offer_id)
 
+    
     def get_all(
         self,
         limit: int = 100,
-        offset: int = 0
+        offset: int = 0,
+        title: Optional[str] = None,
+        company: Optional[str] = None,
+        location: Optional[str] = None,
+        source: Optional[str] = None
     ) -> List[JobOfferModel]:
 
+        statement = select(JobOfferModel)
+
+        # Filtro por título
+        if title:
+            statement = statement.where(
+                JobOfferModel.title.ilike(f"%{title}%")
+            )
+
+        # Filtro por empresa
+        if company:
+            statement = statement.where(
+                JobOfferModel.company.ilike(f"%{company}%")
+            )
+
+        # Filtro por ubicación
+        if location:
+            statement = statement.where(
+                JobOfferModel.location.ilike(f"%{location}%")
+            )
+
+        # Filtro por fuente
+        if source:
+            statement = statement.where(
+                JobOfferModel.source.ilike(f"%{source}%")
+            )
+
+        # Ordenar y aplicar paginación
         statement = (
-            select(JobOfferModel)
+            statement
             .order_by(JobOfferModel.scraped_at.desc())
             .limit(limit)
             .offset(offset)
@@ -151,8 +183,35 @@ class JobOfferRepository:
 
         return list(self.session.scalars(statement).all())
 
-    def count(self) -> int:
+    def count(
+        self,
+        title: Optional[str] = None,
+        company: Optional[str] = None,
+        location: Optional[str] = None,
+        source: Optional[str] = None
+    ) -> int:
         statement = select(func.count()).select_from(JobOfferModel)
+
+        if title:
+            statement = statement.where(
+                JobOfferModel.title.ilike(f"%{title}%")
+            )
+
+        if company:
+            statement = statement.where(
+                JobOfferModel.company.ilike(f"%{company}%")
+            )
+
+        if location:
+            statement = statement.where(
+                JobOfferModel.location.ilike(f"%{location}%")
+            )
+
+        if source:
+            statement = statement.where(
+                JobOfferModel.source.ilike(f"%{source}%")
+            )
+
         return self.session.scalar(statement)
 
     def delete_by_id(self, offer_id: int) -> bool:

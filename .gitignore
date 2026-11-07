@@ -1,10 +1,23 @@
-# Entorno virtual de Python
+# Entornos virtuales de Python
 .venv/
+.venv312/
+.venv*/
 venv/
+env/
 
 # Caché de Python
 __pycache__/
 *.py[cod]
+.pytest_cache/
 
-# Variables de entorno
+# Variables de entorno y credenciales
 .env
+.env.*
+
+# Archivos de configuración local
+.DS_Store
+
+# Modelos y caché de Machine Learning
+.cache/
+cache/
+models_cache/
