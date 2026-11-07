@@ -1,0 +1,13 @@
+
+from sqlalchemy import text
+
+from database.connection import engine
+
+
+def test_database_connection():
+    with engine.connect() as connection:
+        result = connection.execute(text("SELECT 1"))
+        value = result.scalar()
+
+    assert value == 1
+    print("Conexión con PostgreSQL exitosa.")
