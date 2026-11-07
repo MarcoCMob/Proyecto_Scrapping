@@ -9,6 +9,19 @@ from modulos.ai.prompts.cv_prompt import (
     build_cv_prompt
 )
 
+def _clean_queries(queries: list[str], limit: int = 5) -> list[str]:
+    seen = set()
+    cleaned = []
+
+    for query in queries:
+        query = " ".join(query.split())
+        key = query.lower()
+
+        if query and key not in seen:
+            seen.add(key)
+            cleaned.append(query)
+
+    return cleaned[:limit]
 
 def analyze_cv(cv_text: str) -> CVProfile:
 
@@ -40,5 +53,7 @@ def analyze_cv(cv_text: str) -> CVProfile:
             "Gemini devolvió información que no cumple "
             "con el esquema del perfil."
         ) from error
+
+    profile.search_queries = _clean_queries(profile.search_queries)
 
     return profile

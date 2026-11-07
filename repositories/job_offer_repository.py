@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from models.job_offer_model import JobOfferModel
 from schemas.job_schema import JobOffer
-from services.offer_deduplication_service import compare_offers
 from services.offer_deduplication_service import (
     compare_offers,
     normalize_url
@@ -228,3 +227,9 @@ class JobOfferRepository:
         except Exception:
             self.session.rollback()
             raise
+    def list_all(self) -> List[JobOfferModel]:
+        """Devuelve todas las ofertas, las más recientes primero."""
+        statement = select(JobOfferModel).order_by(
+            JobOfferModel.scraped_at.desc()
+        )
+        return list(self.session.scalars(statement).all())

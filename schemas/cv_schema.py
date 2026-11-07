@@ -33,6 +33,10 @@ class CVProfile(BaseModel):
         default_factory=list
     )
 
+    search_queries: list[str] = Field(
+        default_factory=list
+    )
+
 """
 EJEMPLO DE USO DE LA CLASE CVProfile
 profile = CVProfile(

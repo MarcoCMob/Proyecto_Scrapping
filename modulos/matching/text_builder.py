@@ -1,7 +1,9 @@
 
 from schemas.cv_schema import CVProfile
 from schemas.job_schema import JobOffer
+from models.job_offer_model import JobOfferModel
 
+OfferLike = JobOffer | JobOfferModel
 
 def build_cv_text(profile: CVProfile) -> str:
     """
@@ -16,15 +18,15 @@ def build_cv_text(profile: CVProfile) -> str:
             f"Profesión: {profile.profession}"
         )
 
+    if profile.target_positions:
+            sections.append(
+                "Puestos buscados: "
+                + ", ".join(profile.target_positions)
+            )
+            
     if profile.skills:
         sections.append(
             "Habilidades: " + ", ".join(profile.skills)
-        )
-
-    if profile.target_positions:
-        sections.append(
-            "Puestos buscados: "
-            + ", ".join(profile.target_positions)
         )
 
     for experience in profile.experience:
@@ -49,7 +51,7 @@ def build_cv_text(profile: CVProfile) -> str:
     return "\n".join(sections)
 
 
-def build_offer_text(offer: JobOffer) -> str:
+def build_offer_text(offer: OfferLike) -> str:
     """
     Convierte una oferta laboral en un texto
     que represente sus requisitos y características.

@@ -61,3 +61,6 @@ class JobOfferService:
             "has_next": page < total_pages,
             "has_previous": page > 1
         }
+    def get_all_offers(self):
+        """Recupera todas las ofertas almacenadas para el matching."""
+        return self.repository.list_all()

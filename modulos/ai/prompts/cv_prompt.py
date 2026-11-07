@@ -33,6 +33,18 @@ REGLAS IMPORTANTES:
 
 8. Si existe información ambigua, evita realizar
    afirmaciones que no estén respaldadas por el CV.
+9. Genera términos de búsqueda para portales de empleo
+   (campo search_queries):
+   - Entre 3 y 5 términos, en español.
+   - Cortos: de 2 a 4 palabras, como los escribiría
+     una persona en el buscador de un portal de empleo
+     (por ejemplo, "desarrollador java junior").
+   - Basados en las habilidades técnicas y la formación
+     del candidato, no en empleos ajenos a su perfil.
+   - Si el candidato es estudiante o no tiene experiencia
+     en su campo, incluye términos de nivel inicial
+     (practicante, junior, trainee).
+   - Sin repeticiones ni variantes casi idénticas.
 """
 
 
@@ -54,6 +66,7 @@ Identifica:
 - Experiencia laboral, si existe.
 - Formación académica.
 - Puestos laborales relacionados con su perfil.
+- Términos de búsqueda de empleo (search_queries).
 
 No agregues información que no esté respaldada
 por el currículum.

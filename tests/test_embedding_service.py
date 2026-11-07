@@ -22,7 +22,7 @@ def test_encode_text(mock_transformer):
     assert result.shape == (384,)
 
     mock_model.encode.assert_called_once_with(
-        "Desarrollador Java con Spring Boot",
+        "query: Desarrollador Java con Spring Boot",
         convert_to_numpy=True,
         normalize_embeddings=True,
         show_progress_bar=False

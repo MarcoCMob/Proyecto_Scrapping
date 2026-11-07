@@ -1,26 +1,24 @@
-
 from typing import Any, Sequence
 
 from schemas.cv_schema import CVProfile
-from schemas.job_schema import JobOffer
 
 from modulos.matching.text_builder import (
     build_cv_text,
-    build_offer_text
+    build_offer_text,
+    OfferLike
 )
 from modulos.matching.embedding_service import EmbeddingService
 from modulos.matching.similarity_service import SimilarityService
+from modulos.matching.skill_matching import find_skill_matches
+
+SEMANTIC_WEIGHT = 0.6
+SKILLS_WEIGHT = 0.4
+SKILLS_CAP = 5  # con 5 coincidencias la señal ya es máxima
 
 
 class MatchingService:
 
     def __init__(self, embedding_service=None):
-        """
-        Inicializa el servicio de compatibilidad.
-
-        Permite recibir un EmbeddingService externo
-        para facilitar las pruebas unitarias.
-        """
         self.embedding_service = (
             embedding_service
             if embedding_service is not None
@@ -30,20 +28,16 @@ class MatchingService:
     def match_offers(
         self,
         profile: CVProfile,
-        offers: Sequence[JobOffer]
+        offers: Sequence[OfferLike]
     ) -> list[dict[str, Any]]:
         """
-        Calcula la similitud semántica entre un CV
-        y una lista de ofertas laborales.
-
-        Devuelve las ofertas ordenadas de mayor
-        a menor similitud.
+        Combina similitud semántica y coincidencia de skills
+        técnicas. Devuelve las ofertas ordenadas por "score".
         """
 
         if not offers:
             return []
 
-        # 1. Convertir el perfil del candidato en texto.
         cv_text = build_cv_text(profile)
 
         if not cv_text.strip():
@@ -51,45 +45,47 @@ class MatchingService:
                 "El perfil del candidato no contiene información."
             )
 
-        # 2. Convertir todas las ofertas en texto.
-        offer_texts = [
-            build_offer_text(offer)
-            for offer in offers
-        ]
+        offer_texts = [build_offer_text(offer) for offer in offers]
 
-        # 3. Generar el embedding del CV una sola vez.
-        cv_embedding = self.embedding_service.encode_text(
-            cv_text
-        )
-
-        # 4. Generar los embeddings de todas las ofertas
-        # en una sola operación.
+        cv_embedding = self.embedding_service.encode_text(cv_text)
         offer_embeddings = self.embedding_service.encode_texts(
             offer_texts
         )
 
-        # 5. Calcular la similitud de cada oferta con el CV.
+        similarities = [
+            SimilarityService.calculate_similarity(
+                cv_embedding, offer_embedding
+            )
+            for offer_embedding in offer_embeddings
+        ]
+
+        # Reescalar la similitud a 0-1 dentro del lote,
+        # para recuperar la separación que e5 comprime.
+        low, high = min(similarities), max(similarities)
+        spread = high - low
+
         results = []
 
-        for offer, offer_embedding in zip(
-            offers,
-            offer_embeddings,
-            strict=True
+        for offer, offer_text, similarity in zip(
+            offers, offer_texts, similarities, strict=True
         ):
-            similarity = SimilarityService.calculate_similarity(
-                cv_embedding,
-                offer_embedding
+            semantic = (
+                (similarity - low) / spread if spread > 0 else 0.0
             )
+
+            matched = find_skill_matches(profile.skills, offer_text)
+            skills_signal = min(len(matched), SKILLS_CAP) / SKILLS_CAP
 
             results.append({
                 "offer": offer,
-                "similarity": similarity
+                "similarity": similarity,
+                "skill_matches": matched,
+                "score": (
+                    SEMANTIC_WEIGHT * semantic
+                    + SKILLS_WEIGHT * skills_signal
+                ),
             })
 
-        # 6. Ordenar de mayor a menor similitud.
-        results.sort(
-            key=lambda result: result["similarity"],
-            reverse=True
-        )
+        results.sort(key=lambda r: r["score"], reverse=True)
 
         return results
