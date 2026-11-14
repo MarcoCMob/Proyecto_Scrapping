@@ -5,6 +5,10 @@ from modulos.matching.matching_service import MatchingService
 from modulos.scraping.scraper_service import scrape_searches
 from repositories.job_offer_repository import JobOfferRepository
 from schemas.cv_schema import CVProfile
+from modulos.scraping.scraper_service import scrape_searches
+from modulos.scraping.laborum_scraper import (
+    scrape_searches as scrape_laborum_searches
+)
 
 MAX_QUERIES = 5
 
@@ -50,11 +54,23 @@ def match_profile(
             "No hay términos de búsqueda para este perfil."
         )
 
-    offers, errors = scrape_searches(
+    # ESTO LO QUE HACE ES QUE PRIMERO: Busca ofertas en Computrabajo.
+    computrabajo_offers, computrabajo_errors = scrape_searches(
         queries,
         headless=headless,
         max_per_query=max_per_query
     )
+
+    # LUEGO ESO BUSQUE OFERTAS EN LABORUM!!
+    laborum_offers, laborum_errors = scrape_laborum_searches(
+        queries,
+        headless=headless,
+        max_per_query=max_per_query
+    )
+
+    # 3. FINALMENTE SE UNIFICAN LOS ERRORES Y OFERTAS PARA COMPARARLOS CON EL PERFIL DEL CANDIDATO.
+    offers = computrabajo_offers + laborum_offers
+    errors = computrabajo_errors + laborum_errors
 
     stats = {
         "queries": len(queries),

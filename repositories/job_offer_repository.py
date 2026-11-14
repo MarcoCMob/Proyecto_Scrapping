@@ -40,6 +40,8 @@ class JobOfferRepository:
 
         # 3. Buscar candidatos por título, empresa y ubicación.
         statement = select(JobOfferModel).where(
+            JobOfferModel.source == offer.source,
+
             func.lower(func.trim(JobOfferModel.title))
             == offer.title.strip().lower(),
 

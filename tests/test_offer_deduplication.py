@@ -73,3 +73,53 @@ def test_different_companies_are_not_duplicates():
     result = compare_offers(offer_a, offer_b)
 
     assert result is False
+
+def test_same_offer_from_different_sources_are_not_duplicates():
+    offer_computrabajo = SimpleNamespace(
+        title="Desarrollador Backend Junior",
+        company="Empresa ABC",
+        location="Lima",
+        description="Se requiere Java, Spring Boot y PostgreSQL.",
+        url="https://computrabajo.com/oferta/123",
+        source="Computrabajo"
+    )
+
+    offer_laborum = SimpleNamespace(
+        title="Desarrollador Backend Junior",
+        company="Empresa ABC",
+        location="Lima",
+        description="Se requiere Java, Spring Boot y PostgreSQL.",
+        url="https://laborum.pe/job/oferta/123",
+        source="Laborum"
+    )
+
+    result = compare_offers(
+        offer_computrabajo,
+        offer_laborum
+    )
+
+    assert result is False
+
+
+def test_same_offer_from_same_source_are_duplicates():
+    offer_a = SimpleNamespace(
+        title="Desarrollador Backend Junior",
+        company="Empresa ABC",
+        location="Lima",
+        description="Se requiere Java, Spring Boot y PostgreSQL.",
+        url="https://computrabajo.com/oferta/123",
+        source="Computrabajo"
+    )
+
+    offer_b = SimpleNamespace(
+        title="Desarrollador Backend Junior",
+        company="Empresa ABC",
+        location="Lima",
+        description="Se requiere Java, Spring Boot y PostgreSQL.",
+        url="https://computrabajo.com/oferta/456",
+        source="Computrabajo"
+    )
+
+    result = compare_offers(offer_a, offer_b)
+
+    assert result is True

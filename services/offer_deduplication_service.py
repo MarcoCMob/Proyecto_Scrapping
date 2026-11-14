@@ -64,14 +64,21 @@ def calculate_description_similarity(description_a, description_b):
 
 def compare_offers(new_offer, existing_offer, threshold=0.95):
 
-    # Primera comprobación: URL de la publicación.
+    # Primera comprobación: las fuentes deben coincidir.
+    new_source = getattr(new_offer, "source", None)
+    existing_source = getattr(existing_offer, "source", None)
+
+    if new_source != existing_source:
+        return False
+
+    # Segunda comprobación: URL de la publicación.
     new_url = normalize_url(getattr(new_offer, "url", None))
     existing_url = normalize_url(getattr(existing_offer, "url", None))
 
     if new_url and existing_url and new_url == existing_url:
         return True
 
-    # Segunda comprobación: identidad de la oferta.
+    # Tercera comprobación: identidad de la oferta.
     identity_fields = ["title", "company", "location"]
 
     for field in identity_fields:
@@ -86,7 +93,7 @@ def compare_offers(new_offer, existing_offer, threshold=0.95):
         if new_value != existing_value:
             return False
 
-    # Tercera comprobación: similitud de las descripciones.
+    # Cuarta comprobación: similitud de las descripciones.
     similarity = calculate_description_similarity(
         new_offer.description,
         existing_offer.description

@@ -72,7 +72,8 @@ with st.expander("Habilidades detectadas"):
     st.write(", ".join(profile.skills) or "No se detectaron habilidades.")
 
 # Paso 2: términos de búsqueda editables.
-st.subheader("Búsquedas en Computrabajo")
+st.subheader("Búsquedas en portales de empleo")
+st.caption("Las búsquedas se realizan en Computrabajo y Laborum, y se comparan con tu CV.")
 
 terms_text = st.text_area(
     "Un término por línea (puedes editarlos)",
@@ -154,6 +155,8 @@ for rank, item in enumerate(results, start=1):
             f"{offer.location or 'Ubicación no indicada'}"
         )
 
+        st.caption(f"Portal de origen: {offer.source}")
+
         st.progress(
             min(max(item["score"], 0.0), 1.0),
             text="Afinidad relativa a esta búsqueda"
@@ -166,7 +169,7 @@ for rank, item in enumerate(results, start=1):
             st.text(offer.description)
 
         if offer.url:
-            st.link_button("Abrir en Computrabajo", offer.url)
+            st.link_button(f"Abrir en {offer.source}", offer.url)
 
 if output["errors"]:
     with st.expander("Ofertas que no se pudieron leer"):
