@@ -93,7 +93,7 @@ max_per_query = col1.number_input(
     value=10
 )
 
-headless = col2.checkbox("Navegador en segundo plano", value=True)
+headless = False
 
 if st.button("Buscar ofertas", type="primary", disabled=not queries):
     try:
